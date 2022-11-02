@@ -1,0 +1,35 @@
+name: Build and push binaries
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get -y install --no-install-recommends mingw-w64
+      - name: Install rust toolchain linux
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            target: x86_64-unknown-linux-gnu
+      - name: Install rust toolchain windows
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            target: x86_64-pc-windows-gnu
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build
+        run: ./scripts/compile_release.sh 
+      - name: Release
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Latest Build from main"
+          files: release/*
