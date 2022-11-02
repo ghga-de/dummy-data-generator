@@ -35,8 +35,11 @@ pub struct Cli {
     /// Length of each non-header line
     #[clap(short, long, value_parser, default_value_t = 80)]
     line_length: usize,
-    /// file name for output. Produces example_data/<file_name>.fasta
-    #[clap(short, long, value_parser, default_value = "big-file")]
+    /// Optional output folder location. Saves output in current working directory by default
+    #[clap(short, long, value_parser, default_value = ".")]
+    output_folder: String,
+    /// file name for output. Produces <file_name>.fasta
+    #[clap(short, long, value_parser)]
     file_name: String,
 }
 
@@ -69,11 +72,11 @@ fn parse_size(size: &str) -> f64 {
     ]);
 
     let matcher = Regex::new(r"^(?P<value>\d+)(?P<modifier>\w)$").unwrap();
-    if let Some(captures) = matcher.captures(&size) {
+    if let Some(captures) = matcher.captures(size) {
         let value = captures.name("value").unwrap().as_str();
-        let value = usize::from_str_radix(&value, 10).unwrap();
+        let value = str::parse::<usize>(value).unwrap();
         let modifier = captures.name("modifier").unwrap().as_str().to_lowercase();
-        let factor = conversion.get(&*modifier).expect(&format!(
+        let factor = conversion.get(&*modifier).unwrap_or_else(|| panic!(
             "Unsupported modifier: {}.\nOne of {{B,K,M,G}} is required",
             &modifier
         ));

@@ -14,7 +14,6 @@
 // limitations under the License.
 
 use crate::Cli;
-use rand;
 use std::{
     fs::{self, File},
     io::{prelude::*, BufWriter},
@@ -27,13 +26,13 @@ use crate::nucleobase::Nucleobase;
 /// Writes header and lines of random bases to an output file
 pub fn gen_content(args: &Cli) {
     let start = Instant::now();
-
-    let out_dir = "../../example_data";
-
-    fs::create_dir_all(&out_dir).expect("Could not create output directory.");
-
+    
+    if args.output_folder != "." {
+        fs::create_dir_all(&args.output_folder).expect("Could not create output directory.");
+    }
+   
     // build complete output file path
-    let mut path = PathBuf::from(&out_dir);
+    let mut path = PathBuf::from(&args.output_folder);
     path.push(&args.file_name);
     path.set_extension(&"fasta");
 
@@ -43,14 +42,14 @@ pub fn gen_content(args: &Cli) {
 
     // header
     target
-        .write(b"> Dinosaur DNA")
+        .write_all(b"> Dummy DNA")
         .expect("Failed writing header to file.");
 
     // draw bases for next line and write to file
     for idx in 0..args.num_lines as usize {
         progress(idx, start.elapsed(), args.num_lines);
         target
-            .write(gen_random_sequence(args.line_length).as_bytes())
+            .write_all(gen_random_sequence(args.line_length).as_bytes())
             .expect("Failed writing sequence to file.");
     }
 }
@@ -73,10 +72,9 @@ fn progress(idx: usize, elapsed: Duration, num_lines: usize) {
     // skip most lines, else this becomes a bottleneck
     if idx % 100_000 == 0 {
         print!(
-            "\r{:.2}% ({}.{:0>2}s)",
+            "\r{:.1}% ({}s)",
             idx as f32 / num_lines as f32 * 100.0,
             elapsed.as_secs(),
-            elapsed.as_millis() % 1000 / 10,
         );
         std::io::stdout().flush().unwrap();
     }
